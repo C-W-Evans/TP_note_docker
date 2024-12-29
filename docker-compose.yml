@@ -1,0 +1,104 @@
+
+services:
+  db:
+    image: mysql:latest
+    container_name: mysql_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydatabase
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - ./dockerdata/mysql:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+          test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+          interval: 10s
+          timeout: 5s
+          retries: 5
+          start_period: 30s
+    networks:
+      - my_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+    networks:
+      - my_network
+    environment:
+      FLASK_APP: application.py
+      FLASK_ENV: development
+    command: flask run --host=0.0.0.0 --port=5000
+    # depends_on:
+    #   - tensorflow
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules #Sans cette ligne le service front end ne run pas
+    networks:
+      - my_network
+    environment:
+      BACKEND_URL: http://backend:5000/api/v1
+    command: npm start
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+    ports:
+      - "8082:80"
+    networks:
+      - my_network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx_proxy
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    networks:
+      - my_network
+    depends_on:
+      - frontend
+      - backend
+
+  tensorflow:
+    image: tensorflow/serving:latest
+    container_name: tensorflow_service
+    command: >
+      tensorflow_model_server
+      --rest_api_port=8501
+      --model_name=placeholder_model
+      --model_base_path=/models/placeholder_model
+    volumes:
+      - ./tensorflow_models:/models
+    ports:
+      - "8501:8501"
+    environment:
+      MODEL_NAME: placeholder_model
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    driver: bridge
+
