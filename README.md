@@ -1,29 +1,19 @@
 Briève explication sur comment configurer et utiliser le stack docker
 
-Prérequis
+- Prérequis
 Docker et Docker Compose
 
-Setup
-Clone the Repository:
-bash
-Copier le code
-git clone <repository_url>
-cd <repository_name>
-Build and Launch:
-bash
-Copier le code
+- Copier le code
+git clone https://github.com/C-W-Evans/TP_note_docker
+cd TP_note_docker
+
+- Build et demarre
 docker-compose up --build
-Access Services:
-Frontend: http://localhost
+
+- Accède aux services:
+Frontend: http://localhost:4200/
 PhpMyAdmin: http://localhost:8082
 TensorFlow: http://localhost:8501/v1/models/placeholder_model
-Services
-Service	Port	Description
-Frontend	80	Angular App
-Backend	5000	Flask API
-MySQL	3306	Database
-PhpMyAdmin	8082	DB Management
-TensorFlow	8501	Model Serving
-Notes
-Modify database credentials in docker-compose.yml if needed.
-Place TensorFlow models in ./tensorflow_models.
+
+Mettez votre model TensorFlow dans le dossier ./tensorflow_models et enlevez les commentaires du la partie "# depends_on:
+    #   - tensorflow" dans le Dockerfile du backend.
